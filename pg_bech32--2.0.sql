@@ -18,12 +18,19 @@ CREATE FUNCTION bech32_hrp(text) RETURNS text
   AS 'MODULE_PATHNAME', 'pg_bech32_hrp';
 
 CREATE OR REPLACE FUNCTION b32_decode(encodedstr text) RETURNS text
-  LANGUAGE SQL AS $$
-    SELECT
-      CASE
-        WHEN LENGTH(encodedstr) % 5 = 0 THEN ENCODE(SUBSTR(varbit_send(bech32_decode(encodedstr)), 5)::bytea, 'hex')
-        ELSE LEFT(ENCODE(SUBSTR(varbit_send(bech32_decode(encodedstr)), 5)::bytea, 'hex'), -2)
-      END;
+  LANGUAGE plpgsql STABLE AS $$
+  DECLARE
+    bit_string bit varying;
+  BEGIN
+    SELECT INTO bit_string bech32_decode(encodedstr);
+    RETURN (
+      SELECT
+        CASE
+          WHEN LENGTH(bit_string) % 8 = 0 THEN ENCODE(SUBSTR(varbit_send(bit_string), 5)::bytea, 'hex')
+          ELSE LEFT(ENCODE(SUBSTR(varbit_send(bit_string), 5)::bytea, 'hex'), -2)
+        END
+    );
+  END;
   $$;
 
 CREATE OR REPLACE FUNCTION b32_encode(pre text, bytea text) RETURNS text
