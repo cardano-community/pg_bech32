@@ -17,12 +17,12 @@ CREATE FUNCTION bech32_hrp(text) RETURNS text
   LANGUAGE c IMMUTABLE STRICT PARALLEL SAFE COST 10
   AS 'MODULE_PATHNAME', 'pg_bech32_hrp';
 
-CREATE OR REPLACE FUNCTION b32_decode(encodedstr text) RETURNS bytea
+CREATE OR REPLACE FUNCTION b32_decode(encodedstr text) RETURNS text
   LANGUAGE SQL AS $$
     SELECT
       CASE
-        WHEN LENGTH(encodedstr) % 5 = 0 THEN (SUBSTR(varbit_send(bech32_decode(encodedstr)), 5)::text)::bytea
-        ELSE LEFT(SUBSTR(varbit_send(bech32_decode(encodedstr)), 5)::text, -2)::bytea
+        WHEN LENGTH(encodedstr) % 5 = 0 THEN ENCODE(SUBSTR(varbit_send(bech32_decode(encodedstr)), 5)::bytea, 'hex')
+        ELSE LEFT(ENCODE(SUBSTR(varbit_send(bech32_decode(encodedstr)), 5)::bytea, 'hex'), -2)
       END;
   $$;
 
